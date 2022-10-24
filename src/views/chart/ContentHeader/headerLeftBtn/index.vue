@@ -66,7 +66,7 @@ import { ChartLayoutStoreEnum } from '@/store/modules/chartLayoutStore/chartLayo
 const { LayersIcon, BarChartIcon, PrismIcon, HomeIcon, ArrowBackIcon, ArrowForwardIcon } = icon.ionicons5
 const { SaveIcon } = icon.carbon
 const { setItem } = useChartLayoutStore()
-const { dataSyncUpdate } = useSync()
+const { dataSyncUpdate, removeIntervalDataSync } = useSync()
 const { getLayers, getCharts, getDetails } = toRefs(useChartLayoutStore())
 const chartEditStore = useChartEditStore()
 const chartHistoryStore = useChartHistoryStore()
@@ -153,6 +153,7 @@ const goHomeHandle = () => {
     onPositiveCallback: () => {
       goHome()
       useRemoveKeyboard()
+      removeIntervalDataSync()
     }
   })
 }

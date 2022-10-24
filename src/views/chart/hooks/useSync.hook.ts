@@ -234,24 +234,26 @@ export const useSync = () => {
     chartEditStore.setEditCanvas(EditCanvasTypeEnum.SAVE_STATUS, SyncEnum.FAILURE)
   }, 3000)
 
+  let syncTiming:any
   // * 定时处理
   const intervalDataSyncUpdate = () => {
     // 定时获取数据
-    const syncTiming = setInterval(() => {
+    syncTiming = setInterval(() => {
       dataSyncUpdate()
     }, saveInterval * 1000)
-
-    // 销毁
-    onUnmounted(() => {
-      clearInterval(syncTiming)
-    })
   }
   
+  // 卸载监听事件
+  const removeIntervalDataSync = () => {
+    clearInterval(syncTiming)
+  }
+
   return {
     updateComponent,
     updateStoreInfo,
     dataSyncFetch,
     dataSyncUpdate,
-    intervalDataSyncUpdate
+    intervalDataSyncUpdate,
+    removeIntervalDataSync
   }
 }
