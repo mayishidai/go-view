@@ -17,7 +17,7 @@
             object-fit="contain"
             height="180"
             preview-disabled
-            :src="`${cardData.image}?time=${new Date().getTime()}`"
+            :src="`${cardData.image}`"
             :alt="cardData.title"
             :fallback-src="requireErrorImg()"
          ></n-image>
@@ -98,7 +98,7 @@ const {
   SendIcon
 } = icon.ionicons5
 
-const emit = defineEmits(['preview', 'delete', 'resize', 'edit', 'release'])
+const emit = defineEmits(['preview', 'delete', 'resize', 'edit','copy', 'release'])
 
 const props = defineProps({
   cardData: Object as PropType<Chartype>
@@ -127,7 +127,6 @@ const selectOptions = ref([
     label: renderLang('global.r_copy'),
     key: 'copy',
     icon: renderIcon(CopyIcon),
-    disabled: true
   },
   {
     label: renderLang('global.r_rename'),
@@ -171,6 +170,9 @@ const handleSelect = (key: string) => {
     case 'delete':
       deleteHandle()
       break
+    case 'copy':
+      emit('copy', props.cardData)
+      break;
     case 'release':
       releaseHandle()
       break

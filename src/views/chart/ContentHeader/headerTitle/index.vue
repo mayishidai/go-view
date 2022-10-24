@@ -32,9 +32,10 @@ import { ResultEnum } from '@/enums/httpEnum'
 import { fetchRouteParamsLocation, httpErrorHandle } from '@/utils'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
 import { ProjectInfoEnum } from '@/store/modules/chartEditStore/chartEditStore.d'
-import { updateProjectApi } from '@/api/path'
+
 import { useSync } from '../../hooks/useSync.hook'
 import { icon } from '@/plugins'
+import { BackEndFactory } from '@/backend/ibackend'
 
 const chartEditStore = useChartEditStore()
 const { dataSyncUpdate } = useSync()
@@ -64,10 +65,10 @@ const handleFocus = () => {
 const handleBlur = async () => {
   focus.value = false
   chartEditStore.setProjectInfo(ProjectInfoEnum.PROJECT_NAME, title.value || '')
-  const res = (await updateProjectApi({
-    id: fetchRouteParamsLocation(),
+  const res = (await BackEndFactory.updateProject({
+    projectId: fetchRouteParamsLocation(),
     projectName: title.value
-  })) as unknown as MyResponseType
+  })) as any
   if (res.code === ResultEnum.SUCCESS) {
     dataSyncUpdate()
   } else {

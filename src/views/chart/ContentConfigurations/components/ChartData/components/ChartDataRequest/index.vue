@@ -1,5 +1,5 @@
 <template>
-  <n-modal class="go-chart-data-request" v-model:show="modelShow" :mask-closable="false">
+  <n-modal class="go-chart-data-request" v-model:show="modelShow" :mask-closable="false" @esc="escHandler">
     <n-card :bordered="false" role="dialog" size="small" aria-modal="true" style="width: 1000px; height: 800px">
       <template #header></template>
       <template #header-extra> </template>
@@ -54,6 +54,9 @@ const closeHandle = () => {
   emit('update:modelShow', false)
   emit('sendHandle')
   dataSyncUpdate()
+}
+const escHandler = ()=>{
+  emit('update:modelShow', false)
 }
 </script>
 

@@ -30,7 +30,7 @@
         :onBeforeUpload="beforeUploadHandle"
       >
         <n-upload-dragger>
-          <img v-if="canvasConfig.backgroundImage" class="upload-show" :src="canvasConfig.backgroundImage" alt="背景" />
+          <img v-if="canvasConfig.backgroundImage" class="upload-show" :src="BackEndFactory.getFileUrl(canvasConfig.backgroundImage)" alt="背景" />
           <div class="upload-img" v-show="!canvasConfig.backgroundImage">
             <img src="@/assets/images/canvas/noImage.png" />
             <n-text class="upload-desc" depth="3">
@@ -131,20 +131,19 @@ import { backgroundImageSize } from '@/settings/designSetting'
 import { FileTypeEnum } from '@/enums/fileTypeEnum'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
 import { EditCanvasConfigEnum } from '@/store/modules/chartEditStore/chartEditStore.d'
-import { useSystemStore } from '@/store/modules/systemStore/systemStore'
 import { StylesSetting } from '@/components/Pages/ChartItemSetting'
 import { UploadCustomRequestOptions } from 'naive-ui'
 import { fileToUrl, loadAsyncComponent, fetchRouteParamsLocation } from '@/utils'
 import { PreviewScaleEnum } from '@/enums/styleEnum'
 import { ResultEnum } from '@/enums/httpEnum'
 import { icon } from '@/plugins'
-import { uploadFile} from '@/api/path'
+import { BackEndFactory } from '@/backend/ibackend'
+
 
 const { ColorPaletteIcon } = icon.ionicons5
 const { ScaleIcon, FitToScreenIcon, FitToHeightIcon, FitToWidthIcon } = icon.carbon
 
 const chartEditStore = useChartEditStore()
-const systemStore = useSystemStore()
 const canvasConfig = chartEditStore.getEditCanvasConfig
 const editCanvas = chartEditStore.getEditCanvas
 
@@ -273,25 +272,12 @@ const clearColor = () => {
 const customRequest = (options: UploadCustomRequestOptions) => {
   const { file } = options
   nextTick(async () => {
-    if(!systemStore.getFetchInfo.OSSUrl) {
-      window['$message'].error('添加图片失败，请刷新页面重试！')
-      return
-    }
     if (file.file) {
-      // 修改名称
-      const newNameFile = new File(
-        [file.file],
-        `${fetchRouteParamsLocation()}_index_background.png`,
-        { type: file.file.type }
-      )
-      let uploadParams = new FormData()
-      uploadParams.append('object', newNameFile)
-      const uploadRes = await uploadFile(systemStore.getFetchInfo.OSSUrl ,uploadParams) as unknown as MyResponseType
-
+      const uploadRes = await BackEndFactory.uploadFile(file.file, null) as any
       if(uploadRes.code === ResultEnum.SUCCESS) {
         chartEditStore.setEditCanvasConfig(
           EditCanvasConfigEnum.BACKGROUND_IMAGE,
-          uploadRes.data.objectContent.httpRequest.uri
+          uploadRes.data.uri
         )
         chartEditStore.setEditCanvasConfig(
           EditCanvasConfigEnum.SELECT_COLOR,

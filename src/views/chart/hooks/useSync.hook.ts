@@ -4,14 +4,14 @@ import { getUUID, httpErrorHandle, fetchRouteParamsLocation, base64toFile } from
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
 import { EditCanvasTypeEnum, ChartEditStoreEnum, ProjectInfoEnum, ChartEditStorage } from '@/store/modules/chartEditStore/chartEditStore.d'
 import { useChartHistoryStore } from '@/store/modules/chartHistoryStore/chartHistoryStore'
-import { useSystemStore } from '@/store/modules/systemStore/systemStore'
+//import { useSystemStore } from '@/store/modules/systemStore/systemStore'
 import { fetchChartComponent, fetchConfigComponent, createComponent } from '@/packages/index'
 import { saveInterval } from '@/settings/designSetting'
 import throttle from 'lodash/throttle'
 // 接口状态
 import { ResultEnum } from '@/enums/httpEnum'
 // 接口
-import { saveProjectApi, fetchProjectApi, uploadFile, updateProjectApi } from '@/api/path'
+import { BackEndFactory } from '@/backend/ibackend'
 // 画布枚举
 import { SyncEnum } from '@/enums/editPageEnum'
 import { CreateComponentType, CreateComponentGroupType, ConfigType } from '@/packages/index.d'
@@ -45,7 +45,6 @@ const componentMerge = (object: any, sources: any, notComponent = false) => {
 export const useSync = () => {
   const chartEditStore = useChartEditStore()
   const chartHistoryStore = useChartHistoryStore()
-  const systemStore = useSystemStore()
 
   /**
    * * 组件动态注册
@@ -53,7 +52,7 @@ export const useSync = () => {
    * @param isReplace 是否替换数据
    * @returns
    */
-  const updateComponent = async (projectData: ChartEditStorage, isReplace = false, changeId = false) => {
+  const updateComponent = async (projectData: ChartEditStorage, isReplace = false, changeId = false, isHistory = true) => {
     if (isReplace) {
       // 清除列表
       chartEditStore.componentList = []
@@ -97,10 +96,10 @@ export const useSync = () => {
           chartEditStore.addComponentList(
             componentMerge(newComponent, { ..._componentInstance, id: getUUID() }),
             false,
-            true
+            isHistory
           )
         } else {
-          chartEditStore.addComponentList(componentMerge(newComponent, _componentInstance), false, true)
+          chartEditStore.addComponentList(componentMerge(newComponent, _componentInstance), false, isHistory)
         }
       }
     }
@@ -129,7 +128,7 @@ export const useSync = () => {
             groupClass.groupList = targetList
 
             // 分组插入到列表
-            chartEditStore.addComponentList(groupClass, false, true)
+            chartEditStore.addComponentList(groupClass, false, isHistory)
           } else {
             await  create(comItem as CreateComponentType)
           }
@@ -171,16 +170,17 @@ export const useSync = () => {
   const dataSyncFetch = async () => {
     chartEditStore.setEditCanvas(EditCanvasTypeEnum.SAVE_STATUS, SyncEnum.START)
     try {
-      const res = await fetchProjectApi({ projectId: fetchRouteParamsLocation() }) as unknown as MyResponseType
+      const res = await BackEndFactory.fetchProject({ projectId: fetchRouteParamsLocation() }) as any
       if (res.code === ResultEnum.SUCCESS) {
         if (res.data) {
           updateStoreInfo(res.data)
           // 更新全局数据
-          await updateComponent(JSON.parse(res.data.content))
-          return
-        }else {
-          chartEditStore.setProjectInfo(ProjectInfoEnum.PROJECT_ID, fetchRouteParamsLocation())
+          if(res.data.content && res.data.content != "{}"){
+            await updateComponent(JSON.parse(res.data.content), true, false, false)
+            return
+          }
         }
+        chartEditStore.setProjectInfo(ProjectInfoEnum.PROJECT_ID, fetchRouteParamsLocation())
         setTimeout(() => {
           chartEditStore.setEditCanvas(EditCanvasTypeEnum.SAVE_STATUS, SyncEnum.SUCCESS)
         }, 1000)
@@ -196,11 +196,6 @@ export const useSync = () => {
   // * 数据保存
   const dataSyncUpdate = throttle(async () => {
     if(!fetchRouteParamsLocation()) return
-
-    if(!systemStore.getFetchInfo.OSSUrl) {
-      window['$message'].error('数据保存失败，请刷新页面重试！')
-      return
-    }
 
     let projectId = chartEditStore.getProjectInfo[ProjectInfoEnum.PROJECT_ID];
     if(projectId === null || projectId === ''){
@@ -219,23 +214,12 @@ export const useSync = () => {
       useCORS: true
     })
 
-    // 上传预览图
-    let uploadParams = new FormData()
-    uploadParams.append('object', base64toFile(canvasImage.toDataURL(), `${fetchRouteParamsLocation()}_index_preview.png`))
-    const uploadRes = await uploadFile(systemStore.getFetchInfo.OSSUrl, uploadParams) as unknown as MyResponseType
-    // 保存预览图
-    if(uploadRes.code === ResultEnum.SUCCESS) {
-      await updateProjectApi({
-        id: fetchRouteParamsLocation(),
-        indexImage: uploadRes.data.objectContent.httpRequest.uri
-      })
-    }
-
-    // 保存数据
-    let params = new FormData()
-    params.append('projectId', projectId)
-    params.append('content', JSON.stringify(chartEditStore.getStorageInfo || {}))
-    const res= await saveProjectApi(params) as unknown as MyResponseType
+    // 保存数据和预览图
+    const res= await BackEndFactory.updateProject({
+      projectId,
+      content:JSON.stringify(chartEditStore.getStorageInfo || {}),
+      object:base64toFile(canvasImage.toDataURL(), `${fetchRouteParamsLocation()}_index_preview.png`)
+    }) as any
 
     if (res.code === ResultEnum.SUCCESS) {
       // 成功状态
@@ -244,6 +228,8 @@ export const useSync = () => {
       }, 1000)
       return
     }
+    //提示
+    window['$message'].success(window['$t']('global.r_save_fail'))
     // 失败状态
     chartEditStore.setEditCanvas(EditCanvasTypeEnum.SAVE_STATUS, SyncEnum.FAILURE)
   }, 3000)
@@ -260,7 +246,7 @@ export const useSync = () => {
       clearInterval(syncTiming)
     })
   }
-
+  
   return {
     updateComponent,
     updateStoreInfo,

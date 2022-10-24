@@ -2,11 +2,10 @@ import { useRoute } from 'vue-router'
 import { ResultEnum, RequestHttpHeaderEnum } from '@/enums/httpEnum'
 import { ErrorPageNameMap, PageEnum, PreviewEnum } from '@/enums/pageEnum'
 import { docPath, giteeSourceCodePath } from '@/settings/pathConst'
-import { SystemStoreEnum, SystemStoreUserInfoEnum } from '@/store/modules/systemStore/systemStore.d'
 import { StorageEnum } from '@/enums/storageEnum'
 import { clearLocalStorage, getLocalStorage, clearCookie } from './storage'
 import router from '@/router'
-import { logoutApi } from '@/api/path'
+import { BackEndFactory } from '@/backend/ibackend'
 
 /**
  * * 根据名字跳转路由
@@ -106,11 +105,11 @@ export const reloadRoutePage = () => {
  */
 export const logout = async () => {
   try {
-    const res = await logoutApi() as unknown as MyResponseType
+    const res = await BackEndFactory.logout() as any
     if(res.code === ResultEnum.SUCCESS) {
       window['$message'].success(window['$t']('global.logout_success'))
       clearCookie(RequestHttpHeaderEnum.COOKIE)
-      clearLocalStorage(StorageEnum.GO_SYSTEM_STORE)
+      clearLocalStorage(StorageEnum.GO_LOGIN_INFO_STORE)
       routerTurnByName(PageEnum.BASE_LOGIN_NAME)
     }
   } catch (error) {
@@ -147,7 +146,8 @@ export const openGiteeSourceCode = () => {
  * @returns boolean
  */
 export const isPreview = () => {
-  return document.location.hash.includes('preview')
+  return false
+  //return document.location.hash.includes('preview')
 }
 
 /**
@@ -158,6 +158,15 @@ export const fetchRouteParams = () => {
   try {
     const route = useRoute()
     return route.params
+  } catch (error) {
+    window['$message'].warning('查询路由信息失败，请联系管理员！')
+  }
+}
+
+export const fetchRouteQuery = () => {
+  try {
+    const route = useRoute()
+    return route.query
   } catch (error) {
     window['$message'].warning('查询路由信息失败，请联系管理员！')
   }
@@ -188,18 +197,17 @@ export const goHome = () => {
  * * 判断是否登录
  * @return boolean
  */
-export const loginCheck = () => {
+ export const loginCheck = () => {
   try {
-    const info = getLocalStorage(StorageEnum.GO_SYSTEM_STORE)
+    const info = getLocalStorage(StorageEnum.GO_LOGIN_INFO_STORE)
     if (!info) return false
-    if (info[SystemStoreEnum.USER_INFO][SystemStoreUserInfoEnum.USER_TOKEN]) {
-      return true
-    }
+    // 检查 Token ?
+    if(info.token && info.userinfo) return true
     return false
   } catch (error) {
     return false
   }
-}
+} 
 
 /**
  * * 预览地址

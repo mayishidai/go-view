@@ -1,7 +1,7 @@
 <template>
   <div
     class="chart-item"
-    v-for="(item, index) in localStorageInfo.componentList"
+    v-for="(item, index) in reactiveList"
     :class="animationsClass(item.styles.animations)"
     :key="item.id"
     :style="{
@@ -19,6 +19,7 @@
       :groupIndex="index"
       :themeSetting="themeSetting"
       :themeColor="themeColor"
+      v-on="useLifeHandler(item)"
     ></preview-render-group>
 
     <!-- 单组件 -->
@@ -29,19 +30,20 @@
       :themeSetting="themeSetting"
       :themeColor="themeColor"
       :style="{ ...getSizeStyle(item.attr) }"
+      v-on="useLifeHandler(item)"
     ></component>
   </div>
 </template>
 
 <script setup lang="ts">
-import { PropType, computed } from 'vue'
+import { PropType, computed, reactive } from 'vue'
 import { ChartEditStorageType } from '../../index.d'
 import { PreviewRenderGroup } from '../PreviewRenderGroup/index'
 import { CreateComponentGroupType } from '@/packages/index.d'
 import { chartColors } from '@/settings/chartThemes/index'
 import { animationsClass, getFilterStyle, getTransformStyle, getBlendModeStyle } from '@/utils'
 import { getSizeStyle, getComponentAttrStyle, getStatusStyle } from '../../utils'
-
+import { useLifeHandler } from '@/hooks'
 const props = defineProps({
   localStorageInfo: {
     type: Object as PropType<ChartEditStorageType>,
@@ -49,6 +51,7 @@ const props = defineProps({
   }
 })
 
+const reactiveList = reactive(props.localStorageInfo.componentList)
 // 主题色
 const themeSetting = computed(() => {
   const chartThemeSetting = props.localStorageInfo.editCanvasConfig.chartThemeSetting
