@@ -14,6 +14,7 @@
             @resize="resizeHandle"
             @delete="deleteHandle(item)"
             @release="releaseHandle(item, index)"
+            @copy="copyHandle(item)"
             @edit="editHandle"
           ></project-items-card>
         </n-grid-item>
@@ -53,7 +54,7 @@ import { useDataListInit } from './hooks/useData.hook'
 
 const { CopyIcon, EllipsisHorizontalCircleSharpIcon } = icon.ionicons5
 const { modalData, modalShow, closeModal, previewHandle, resizeHandle, editHandle } = useModalDataInit()
-const { loading, paginat, list, changeSize, changePage, releaseHandle, deleteHandle } = useDataListInit()
+const { loading, paginat, list, changeSize, changePage, releaseHandle, copyHandle, deleteHandle } = useDataListInit()
 </script>
 
 <style lang="scss" scoped>

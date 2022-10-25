@@ -40,7 +40,7 @@ import { icon } from '@/plugins'
 import { PageEnum, ChartEnum } from '@/enums/pageEnum'
 import { ResultEnum } from '@/enums/httpEnum'
 import { fetchPathByName, routerTurnByPath, renderLang, getUUID } from '@/utils'
-import { createProjectApi } from '@/api/path'
+import { BackEndFactory } from '@/backend/ibackend'
 
 const { FishIcon, CloseIcon } = icon.ionicons5
 const { StoreIcon, ObjectStorageIcon } = icon.carbon
@@ -89,19 +89,19 @@ const btnHandle = async (key: string) => {
     case ChartEnum.CHART_HOME_NAME:
       try {
         // 新增项目
-        const res = await createProjectApi({
+        const res = await BackEndFactory.createProject({
           // 项目名称
           projectName: getUUID(),
           // remarks
           remarks: null,
           // 图片地址
           indexImage: null,
-        }) as unknown as MyResponseType
+        }) as any
         if(res.code === ResultEnum.SUCCESS) {
           window['$message'].success(window['$t']('project.create_success'))
-
           const { id } = res.data
           const path = fetchPathByName(ChartEnum.CHART_HOME_NAME, 'href')
+
           routerTurnByPath(path, [id], undefined, true)
           closeHandle()
         }

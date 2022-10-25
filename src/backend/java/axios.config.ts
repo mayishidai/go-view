@@ -1,4 +1,7 @@
-import { ModuleTypeEnum } from '@/enums/httpEnum'
+export enum ModuleTypeEnum {
+  SYSTEM = 'sys',
+  PROJECT = 'project',
+}
 
 // 接口白名单（免登录）
 export const fetchAllowList = [

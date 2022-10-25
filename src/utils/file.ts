@@ -26,6 +26,23 @@ export const base64toFile = (dataurl: string, fileName: string) => {
 }
 
 /**
+ * file转 blob
+ * @param { File } file 文件对象
+ */
+export const fileToBlob = (file:File) =>{
+  return new Promise<Blob>(function (resolve, reject) {
+    let reader = new FileReader()
+    reader.readAsArrayBuffer(file)
+    reader.onload =  function (e: ProgressEvent<FileReader>) {
+      if(e.target){
+          const blob = new Blob([<ArrayBuffer>e.target.result], { type: file.type });
+          resolve(blob);
+      }
+    }
+  })
+}
+
+/**
  * * url转file
  */
  export const urlToFile = (fileUrl: string, fileName = `${new Date().getTime()}`): File => {

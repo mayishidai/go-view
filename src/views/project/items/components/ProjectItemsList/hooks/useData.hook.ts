@@ -1,7 +1,7 @@
 import { ref, reactive } from 'vue';
 import { goDialog, httpErrorHandle } from '@/utils'
 import { DialogEnum } from '@/enums/pluginEnum'
-import { projectListApi, deleteProjectApi, changeProjectReleaseApi } from '@/api/path'
+import { BackEndFactory } from '@/backend/ibackend'
 import { Chartype, ChartList } from '../../../index.d'
 import { ResultEnum } from '@/enums/httpEnum'
 
@@ -24,24 +24,14 @@ export const useDataListInit = () => {
   // 数据请求
   const fetchList = async () => {
     loading.value = true
-    const res = await projectListApi({
+    const res = await BackEndFactory.projectList({
       page: paginat.page,
       limit: paginat.limit
     }) as any
-    if (res.data) {
+    if (res.code==ResultEnum.SUCCESS) {
       const { count } = res
       paginat.count = count
-      list.value = res.data.map((e: any) => {
-        const { id, projectName, state, createTime, indexImage, createUserId } = e
-        return {
-          id: id,
-          title: projectName,
-          createId: createUserId,
-          time: createTime,
-          image: indexImage,
-          release: state !== -1
-        }
-      })
+      list.value = res.data;
       setTimeout(() => {
         loading.value = false
       }, 500)
@@ -68,8 +58,8 @@ export const useDataListInit = () => {
       type: DialogEnum.DELETE,
       promise: true,
       onPositiveCallback: () => new Promise(res => {
-        res(deleteProjectApi({
-          ids: cardData.id
+        res(BackEndFactory.deleteProject({
+          projectId: cardData.id
         }))
       }),
       promiseResCallback: (res: any) => {
@@ -83,14 +73,32 @@ export const useDataListInit = () => {
     })
   }
 
+  
+  // 复制项目
+  const copyHandle = async (cardData: Chartype) => {
+    const { id, title } = cardData
+    const res = await BackEndFactory.copyProject({
+      copyId: id,
+      projectName: '复制-' + title
+    }) as any
+    if (res.code === ResultEnum.SUCCESS) {
+      list.value = []
+      fetchList()
+      window['$message'].success("复制项目成功！")
+      return
+    }
+    httpErrorHandle()
+  }
+
+
   // 发布处理
   const releaseHandle = async (cardData: Chartype, index: number) => {
     const { id, release } = cardData
-    const res = await changeProjectReleaseApi({
-      id: id,
+    const res = await BackEndFactory.updateProject({
+      projectId: id,
       // [-1未发布, 1发布]
-      state: !release ? 1 : -1
-    }) as unknown as MyResponseType
+      release: !release ? 1 : -1
+    }) as any
     if (res.code === ResultEnum.SUCCESS) {
       list.value = []
       fetchList()
@@ -114,6 +122,7 @@ export const useDataListInit = () => {
     paginat,
     list,
     fetchList,
+    copyHandle,
     releaseHandle,
     changeSize,
     changePage,
